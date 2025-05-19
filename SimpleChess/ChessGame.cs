@@ -348,7 +348,7 @@ public class ChessGame
                 sb.Append('[');
                 sb.Append(item);
                 sb.Append(' ');
-                sb.Append(this[item]);
+                sb.Append('"').Append(this[item]).Append('"');
                 sb.Append("]\n");
             }
 
@@ -359,7 +359,7 @@ public class ChessGame
                 sb.Append('[');
                 sb.Append(item);
                 sb.Append(' ');
-                sb.Append(this[item]);
+                sb.Append('"').Append(this[item]).Append('"');
                 sb.Append(']');
                 sb.Append("]\n");
             }
