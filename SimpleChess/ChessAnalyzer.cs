@@ -51,23 +51,51 @@ public class ChessAnalyzer
         }
 
         var childDepth = depth + 1;
-        Parallel.ForEach(moves, m =>
-        {
-            var b = board;
-            b.Move(m);
-            // if position has been visited before,
-            // then return draw
 
-            var results = NegaMax(b, childDepth, -beta, -alpha);
-            var newScore = -results.Score;
+        // Create a list to store tasks
+        var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task<System.Tuple<ChessMove, ChessResults>>>();
+
+        foreach (var m in moves)
+        {
+            var b = board; // Create a copy of the board for this move
+            b.Move(m);     // Apply the move
+
+            // Create a new task for this move
+            System.Threading.Tasks.Task<System.Tuple<ChessMove, ChessResults>> task = System.Threading.Tasks.Task.Run(() =>
+            {
+                // Call NegaMax for the position after the move m
+                // Note: we pass -beta and -alpha because NegaMax evaluates from the other player's perspective
+                var results = NegaMax(b, childDepth, -beta, -alpha);
+                return System.Tuple.Create(m, results); // Return the original move 'm' and its NegaMax results
+            });
+            tasks.Add(task);
+        }
+
+        // Wait for all tasks to complete
+        System.Threading.Tasks.Task.WhenAll(tasks).Wait();
+
+        // Initialize alpha (local best score for this node) to float.MinValue.
+        // Initialize best (the best ChessMove) to default(ChessMove).
+        alpha = float.MinValue; 
+        best = default(ChessMove); 
+
+        // Process the results
+        foreach (var task in tasks)
+        {
+            var taskResult = task.Result;
+            var moveConsidered = taskResult.Item1;
+            var resultsFromNegaMax = taskResult.Item2;
+            var newScore = -resultsFromNegaMax.Score; // Score is from opponent's view, so negate
+
             if (newScore > alpha)
             {
                 alpha = newScore;
-                best = m;
+                best = moveConsidered;
             }
-        });
+        }
 
         Finish:
+        // Memoize with the overall best move and score found for this node
         return Memoize(ref board, best, alpha, depth);
     }
 
